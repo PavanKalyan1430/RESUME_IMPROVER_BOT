@@ -227,9 +227,12 @@ async def template_selected(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     new_score = float(session.rescored_analysis["score"])
     improvement = round(new_score - old_score, 1)
 
+    changes_made = rewrite_response.get("changes_made", [])
+    changes_text = "\n\nChanges Made:\n" + "\n".join(f"- {c}" for c in changes_made) if changes_made else ""
+
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text=format_final_response(old_score, new_score, improvement),
+        text=format_final_response(old_score, new_score, improvement) + changes_text,
     )
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
@@ -250,9 +253,19 @@ async def template_selected(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         caption=f"Download your rewritten resume as a styled PDF ({template}).",
     )
 
+    keyboard = InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton("ATS Style", callback_data="template:ATS Resume"),
+                InlineKeyboardButton("Modern Style", callback_data="template:Modern Resume"),
+            ],
+            [InlineKeyboardButton("Creative Style", callback_data="template:Creative Resume")],
+        ]
+    )
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text="Use /analyze to start another review.",
+        text="Want to try another style? Select below or use /start to begin a new review.",
+        reply_markup=keyboard,
     )
     return
 

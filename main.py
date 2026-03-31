@@ -52,7 +52,7 @@ async def analyze_resume(payload: AnalyzeRequest) -> dict:
 async def rewrite_resume(payload: RewriteRequest) -> dict:
     try:
         service = get_ai_service()
-        improved_resume = await service.rewrite_resume(
+        improved_resume, changes_made = await service.rewrite_resume(
             jd=payload.jd,
             resume_text=payload.resume_text,
             template=payload.template,
@@ -60,6 +60,7 @@ async def rewrite_resume(payload: RewriteRequest) -> dict:
         rescored = await service.analyze_resume(payload.jd, improved_resume)
         return {
             "improved_resume": improved_resume,
+            "changes_made": changes_made,
             "analysis": rescored.to_dict(),
         }
     except AIServiceError as exc:

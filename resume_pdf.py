@@ -31,25 +31,29 @@ SECTION_HEADINGS = {
 @dataclass(frozen=True)
 class ResumeTheme:
     name: str
-    top_band_color: colors.Color
+    top_band_color: colors.Color | None
     heading_color: colors.Color
-    accent_color: colors.Color
+    accent_color: colors.Color | None
     body_text_color: colors.Color
     title_alignment: int
     heading_font: str
     body_font: str
+    heading_back_color: colors.Color | None
+    heading_alignment: int
 
 
 THEMES = {
     "ATS Resume": ResumeTheme(
         name="ATS Resume",
-        top_band_color=colors.HexColor("#1F2937"),
+        top_band_color=None,
         heading_color=colors.HexColor("#111827"),
-        accent_color=colors.HexColor("#D1D5DB"),
+        accent_color=None,
         body_text_color=colors.HexColor("#111827"),
         title_alignment=TA_LEFT,
         heading_font="Helvetica-Bold",
         body_font="Helvetica",
+        heading_back_color=None,
+        heading_alignment=TA_LEFT,
     ),
     "Modern Resume": ResumeTheme(
         name="Modern Resume",
@@ -60,16 +64,20 @@ THEMES = {
         title_alignment=TA_LEFT,
         heading_font="Helvetica-Bold",
         body_font="Helvetica",
+        heading_back_color=colors.HexColor("#CCFBF1"),
+        heading_alignment=TA_LEFT,
     ),
     "Creative Resume": ResumeTheme(
         name="Creative Resume",
-        top_band_color=colors.HexColor("#C2410C"),
-        heading_color=colors.HexColor("#9A3412"),
-        accent_color=colors.HexColor("#FDBA74"),
-        body_text_color=colors.HexColor("#431407"),
+        top_band_color=colors.HexColor("#2E1065"),
+        heading_color=colors.HexColor("#4C1D95"),
+        accent_color=colors.HexColor("#C4B5FD"),
+        body_text_color=colors.HexColor("#1F2937"),
         title_alignment=TA_CENTER,
         heading_font="Helvetica-Bold",
         body_font="Helvetica",
+        heading_back_color=None,
+        heading_alignment=TA_CENTER,
     ),
 }
 
@@ -82,26 +90,34 @@ def build_resume_pdf(resume_text: str, template: str, source_filename: str | Non
     doc = SimpleDocTemplate(
         buffer,
         pagesize=LETTER,
-        leftMargin=0.65 * inch,
-        rightMargin=0.65 * inch,
-        topMargin=0.7 * inch,
-        bottomMargin=0.6 * inch,
+        leftMargin=0.5 * inch,
+        rightMargin=0.5 * inch,
+        topMargin=0.4 * inch,
+        bottomMargin=0.4 * inch,
     )
     styles = _build_styles(theme)
     story = _build_story(sections, styles)
-    doc.build(story, onFirstPage=lambda canvas, _: _draw_page_frame(canvas, doc, theme))
+    doc.build(story, onFirstPage=lambda canvas, _: _draw_page_frame(canvas, doc, theme), onLaterPages=lambda canvas, _: _draw_page_frame(canvas, doc, theme))
 
     return buffer.getvalue(), _make_output_filename(source_filename)
 
 
 def _draw_page_frame(canvas, doc, theme: ResumeTheme) -> None:
+    if theme.name == "ATS Resume":
+        return
     page_width, page_height = LETTER
     canvas.saveState()
-    canvas.setFillColor(theme.top_band_color)
-    canvas.rect(0, page_height - 0.42 * inch, page_width, 0.42 * inch, fill=1, stroke=0)
-    canvas.setStrokeColor(theme.accent_color)
-    canvas.setLineWidth(2)
-    canvas.line(doc.leftMargin, page_height - 0.52 * inch, page_width - doc.rightMargin, page_height - 0.52 * inch)
+    if theme.name == "Modern Resume" and theme.top_band_color and theme.accent_color:
+        canvas.setFillColor(theme.top_band_color)
+        canvas.rect(0, page_height - 0.3 * inch, page_width, 0.3 * inch, fill=1, stroke=0)
+        canvas.setStrokeColor(theme.accent_color)
+        canvas.setLineWidth(1.5)
+        canvas.line(doc.leftMargin, page_height - 0.4 * inch, page_width - doc.rightMargin, page_height - 0.4 * inch)
+    elif theme.name == "Creative Resume" and theme.top_band_color and theme.accent_color:
+        canvas.setFillColor(theme.top_band_color)
+        canvas.rect(0, 0, 0.15 * inch, page_height, fill=1, stroke=0)
+        canvas.setFillColor(theme.accent_color)
+        canvas.rect(0.15 * inch, 0, 0.05 * inch, page_height, fill=1, stroke=0)
     canvas.restoreState()
 
 
@@ -110,7 +126,7 @@ def _build_story(sections: list[tuple[str | None, list[str]]], styles: StyleShee
 
     if not sections:
         story.append(Paragraph("Resume", styles["resume_title"]))
-        story.append(Spacer(1, 0.18 * inch))
+        story.append(Spacer(1, 0.15 * inch))
         return story
 
     first_heading, first_lines = sections[0]
@@ -120,7 +136,7 @@ def _build_story(sections: list[tuple[str | None, list[str]]], styles: StyleShee
         story.append(Paragraph(_escape(identity_lines[0]), styles["resume_title"]))
         if len(identity_lines) > 1:
             story.append(Paragraph(_escape(" | ".join(identity_lines[1:])), styles["resume_subtitle"]))
-        story.append(Spacer(1, 0.18 * inch))
+        story.append(Spacer(1, 0.1 * inch))
         if body_lines:
             sections = [(None, body_lines), *sections[1:]]
         else:
@@ -129,7 +145,7 @@ def _build_story(sections: list[tuple[str | None, list[str]]], styles: StyleShee
     for heading, lines in sections:
         if heading:
             story.append(Paragraph(_escape(heading.upper()), styles["section_heading"]))
-            story.append(Spacer(1, 0.06 * inch))
+            story.append(Spacer(1, 0.02 * inch))
 
         for line in lines:
             if _is_bullet(line):
@@ -139,7 +155,7 @@ def _build_story(sections: list[tuple[str | None, list[str]]], styles: StyleShee
                 if heading and "skills" in heading.lower():
                     style_name = "skills_body"
                 story.append(Paragraph(_escape(line), styles[style_name]))
-        story.append(Spacer(1, 0.12 * inch))
+        story.append(Spacer(1, 0.05 * inch))
 
     return story
 
@@ -151,11 +167,11 @@ def _build_styles(theme: ResumeTheme) -> StyleSheet1:
             name="resume_title",
             parent=styles["Title"],
             fontName=theme.heading_font,
-            fontSize=20,
+            fontSize=21,
             leading=24,
             textColor=theme.heading_color,
             alignment=theme.title_alignment,
-            spaceAfter=6,
+            spaceAfter=2,
         )
     )
     styles.add(
@@ -163,11 +179,11 @@ def _build_styles(theme: ResumeTheme) -> StyleSheet1:
             name="resume_subtitle",
             parent=styles["BodyText"],
             fontName=theme.body_font,
-            fontSize=10.5,
+            fontSize=10,
             leading=13,
             textColor=theme.body_text_color,
             alignment=theme.title_alignment,
-            spaceAfter=4,
+            spaceAfter=8,
         )
     )
     styles.add(
@@ -175,16 +191,17 @@ def _build_styles(theme: ResumeTheme) -> StyleSheet1:
             name="section_heading",
             parent=styles["Heading2"],
             fontName=theme.heading_font,
-            fontSize=11.5,
+            fontSize=12,
             leading=14,
             textColor=theme.heading_color,
-            borderPadding=0,
+            borderPadding=3 if theme.heading_back_color else 0,
             borderWidth=0,
-            backColor=theme.accent_color,
+            backColor=theme.heading_back_color,
+            alignment=theme.heading_alignment,
             leftIndent=0,
             rightIndent=0,
-            spaceBefore=8,
-            spaceAfter=4,
+            spaceBefore=12,
+            spaceAfter=6,
         )
     )
     styles.add(
@@ -192,8 +209,8 @@ def _build_styles(theme: ResumeTheme) -> StyleSheet1:
             name="resume_body",
             parent=styles["BodyText"],
             fontName=theme.body_font,
-            fontSize=10,
-            leading=13,
+            fontSize=10.5,
+            leading=14,
             textColor=theme.body_text_color,
             alignment=TA_LEFT,
             spaceAfter=4,
@@ -204,11 +221,11 @@ def _build_styles(theme: ResumeTheme) -> StyleSheet1:
             name="skills_body",
             parent=styles["BodyText"],
             fontName=theme.body_font,
-            fontSize=10,
-            leading=13,
+            fontSize=10.5,
+            leading=14,
             textColor=theme.body_text_color,
             alignment=TA_LEFT,
-            spaceAfter=4,
+            spaceAfter=2,
         )
     )
     styles.add(
@@ -216,13 +233,13 @@ def _build_styles(theme: ResumeTheme) -> StyleSheet1:
             name="resume_bullet",
             parent=styles["BodyText"],
             fontName=theme.body_font,
-            fontSize=10,
-            leading=13,
+            fontSize=10.5,
+            leading=14,
             textColor=theme.body_text_color,
-            leftIndent=14,
+            leftIndent=16,
             firstLineIndent=0,
             bulletIndent=0,
-            spaceAfter=4,
+            spaceAfter=3,
         )
     )
     return styles

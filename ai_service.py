@@ -53,14 +53,19 @@ class MistralResumeService:
         data = await self._request_json(prompt)
         return self._parse_analysis_result(data)
 
-    async def rewrite_resume(self, jd: str, resume_text: str, template: str) -> str:
+    async def rewrite_resume(self, jd: str, resume_text: str, template: str) -> tuple[str, list[str]]:
         prompt = self._build_rewrite_prompt(jd=jd, resume_text=resume_text, template=template)
         data = await self._request_json(prompt)
 
         improved_resume = str(data.get("improved_resume", "")).strip()
+        changes_made = data.get("changes_made", [])
+        if not isinstance(changes_made, list):
+            changes_made = []
+        changes_made = [str(c) for c in changes_made if str(c).strip()]
+        
         if not improved_resume:
             raise AIServiceError("Mistral did not return an improved resume.")
-        return improved_resume
+        return improved_resume, changes_made
 
     async def _request_json(self, prompt: str) -> dict[str, Any]:
         try:
@@ -143,13 +148,15 @@ Resume:
 Rewrite the resume to better match the job description using the "{template}" template style.
 Return JSON with this exact schema:
 {{
-  "improved_resume": "full rewritten resume in plain text"
+  "improved_resume": "full rewritten resume in plain text",
+  "changes_made": ["bullet point describing a specific change you made", "another specific change"]
 }}
 
 Rules:
 - Keep the candidate truthful. Do not invent jobs, degrees, certifications, metrics, or technical skills.
 - Improve structure, wording, relevance, keyword alignment, and ATS readability.
-- Preserve any existing real facts, achievements, and chronology when present.
+- IMPORTANT: Use space cleverly to fill exactly one full page. Do not aggressively cut off the Education or Experience sections. Provide detailed, strong bullet points.
+- Only trim older, irrelevant jobs or minor details if absolutely necessary to prevent the text from spilling onto a second page. Ensure the resume looks complete and well-rounded.
 - Make the output clean, readable, and ready to paste into a resume editor.
 - Include these sections when supported by the source material: Summary, Skills, Experience, Projects, Education.
 - Emphasize JD keywords only when they are legitimately supported by the original resume.
