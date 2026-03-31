@@ -1,219 +1,68 @@
-# AI Resume Analyzer Bot
+# AI Resume Analyzer System
 
-A hackathon-ready project that combines a FastAPI backend, Telegram and Discord bots, PDF resume parsing, and Mistral-powered resume analysis/rewrite workflows.
+## 1. Project Overview
+The modern job market relies heavily on Applicant Tracking Systems (ATS) that ruthlessly filter candidates based strictly on semantic constraints and structural readability. 
+This project mathematically maps raw candidate resumes against targeted Job Descriptions (JDs), identifies critical keyword gaps, and synthetically reconstructs a highly optimized, fully formatted one-page PDF artifact directly tailored to the job. It completely eliminates the manual, time-consuming overhead of restructuring and rewriting resumes for individual applications.
 
-## Features
+## 2. System Architecture
+The application runs on a decoupled, microservice-inspired architecture to ensure scalability and separation of concerns:
+- **Client Layer (Bots)**: Asynchronous Telegram (and optional Discord) bots act as the primary interface, maintaining fast, conversational UX state machines.
+- **Backend API Layer (FastAPI)**: A purely stateless HTTP server responsible for business logic, data validation, and load orchestration.
+- **AI Intelligence Layer**: Integrates Mistral AI via Prompt Engineering to parse semantic meaning, score data, and rebuild text structures.
+- **Document Rendering Engine**: A programmatic PDF rendering module (`reportlab`) that seamlessly translates unstructured text strings into specific mathematical coordinates on a document canvas.
 
-- Accepts a job description and a resume from Telegram or Discord users
-- Parses PDF or text resumes
-- Analyzes resume-to-JD fit with:
-  - Score out of 10
-  - Match percentage
-  - Missing skills
-  - Strengths
-  - Weaknesses
-  - Suggestions
-  - Missing keywords
-- Lets the user pick a template:
-  - ATS Resume
-  - Modern Resume
-  - Creative Resume
-- Rewrites the resume without inventing fake experience
-- Re-scores the improved resume
-- Sends the improved resume back as a downloadable styled PDF
+## 3. Workflow / Execution Flow
+1. **Intake Phase**: The user passes a target JD. The bot instantiates a transient session dictionary in memory. The user then uploads a base Resume (TXT or PDF).
+2. **Analysis Pipeline**: The payload is dispatched to the backend API. The FastAPI service orchestrates an LLM call enforcing rigid JSON extraction. The system returns quantitative insights, ATS scoring, and missing hard skills.
+3. **Template Selection & Rewrite**: The user selects a desired visual structure (e.g., *ATS*, *Modern*, *Creative*). The backend triggers a generative rewrite heavily restricted by a max-400-word constraint to guarantee a 1-page fit.
+4. **Rendering & Dispatch**: The system intercepts the returned text, dynamically switches rendering logic based on the user's template selection, maps the font/margin boundaries via `reportlab`, generates binary PDF data in a memory buffer, and streams it instantly back to the user interface.
 
-## Project Structure
+## 4. Core Modules Breakdown
 
-```text
-project/
-|-- main.py
-|-- bot.py
-|-- discord_bot.py
-|-- ai_service.py
-|-- parser.py
-|-- resume_pdf.py
-|-- resume_parser.py
-|-- resume_workflow.py
-|-- requirements.txt
-`-- README.md
-```
+- **`main.py` (FastAPI Server)**
+  - **Responsibility**: Expose HTTP endpoints and handle request validation.
+  - **Internal Working**: Defines strict Pydantic schemas (`AnalyzeRequest`, `RewriteRequest`) to validate raw data bounds before initiating heavy external API calls.
+  
+- **`bot.py` (Client State Handler)**
+  - **Responsibility**: Handle multi-step conversational UI and inline hardware feedback.
+  - **Internal Working**: Employs `python-telegram-bot` state machines to cache contexts. It dynamically updates inline callback buttons so users can repeatedly regenerate the same resume in diverse formats without needing to re-upload the base documents.
 
-## Requirements
+- **`ai_service.py` (LLM Integration Engine)**
+  - **Responsibility**: Orchestrate prompts, inject context, and map string responses into programmatically usable properties.
+  - **Internal Working**: Employs zero-shot structured prompts that strictly mandate JSON-schema outputs, parsing them back out into mapped Python dataclasses like `AnalysisResult`.
 
-- Python 3.9+
-- A Telegram bot token from BotFather
-- A Discord bot token from the Discord Developer Portal
-- A Mistral API key
+- **`resume_pdf.py` (Document Generation Renderer)**
+  - **Responsibility**: Convert plain text into dynamically structured, visually distinct PDFs.
+  - **Internal Working**: Utilizes Regex to heuristically identify ATS section headings, dynamically modifies line height/font points based on programmatic spatial constraints, and applies different structural layouts sequentially through the `reportlab.platypus` rendering engine.
 
-## Environment Variables
+## 5. Key Functionalities
+- **Context-Aware Scoring**: Analyzes structural matches and dynamically aggregates both Strengths and Missing Keywords.
+- **Non-Destructive Generative Rewriting**: Trims old, irrelevant technical padding and focuses specifically on matching JD attributes while preserving the underlying truthfulness of the applicant’s experience.
+- **Persistent Generation Session**: Allows users to render the same resulting artifact iteratively across multiple template pipelines (ATS, Modern, Creative) directly from initial cached memory.
+- **Architectural Formatting Constraints**: Automates margin generation and strict 1-page summarization sizing to simulate industry-standard constraints perfectly.
 
-Set these before running:
+## 6. API / Interface Design
+- **`POST /analyze`**
+  - **Payload**: `{"jd": "...", "resume_text": "..."}`
+  - **Purpose**: Returns an objective analysis schema mapping `score`, `match_percentage`, `missing_keywords`, and qualitative feedback.
+- **`POST /rewrite`**
+  - **Payload**: `{"jd": "...", "resume_text": "...", "template": "..."}`
+  - **Purpose**: Forces LLM output synthesis, returning a heavily optimized `improved_resume` string alongside an array of explicit `changes_made`.
 
-```powershell
-$env:MISTRAL_API_KEY="your_mistral_api_key"
-$env:TELEGRAM_BOT_TOKEN="your_telegram_bot_token"
-$env:DISCORD_BOT_TOKEN="your_discord_bot_token"
-$env:API_BASE_URL="http://127.0.0.1:8000"
-$env:MISTRAL_MODEL="mistral-small-latest"
-```
+## 7. Technical Highlights
+- **Decoupled Architecture**: By completely decoupling the Bot UX from the FastAPI backend, the AI generation service can instantly be consumed by future platforms (e.g., Web, Mobile Apps) without major refactoring.
+- **Strict Schema Enforcement**: Utilizing structured JSON formatting tightly couples LLM generation with reliable pythonic objects, mitigating string-manipulation errors and hallucination bleed.
+- **Design-Agnostic Extensibility**: Document generation is entirely decoupled from the threading logic, isolating template variations to `ResumeTheme` configuration dataclasses. Injecting a new styling layout requires modifying almost zero core logic.
 
-`API_BASE_URL` and `MISTRAL_MODEL` are optional. The defaults shown above are used if they are not set.
+## 8. Challenges & Solutions
+- **Challenge - Spatial Overflow constraints**: Early iterations of the LLM hallucinated excessive filler details causing the generated output to aggressively spill beyond standard PDF margins into unreadable 2-page documents.
+- **Solution**: Engineered dynamic spatial intelligence by modifying base `reportlab` margins natively, fine-tuning paragraph line `leading`, and creating heavily defensive prompts explicitly commanding a 400-word ceiling optimization. 
+- **Challenge - Context Resetting**: Telegram conversational pipelines inherently discard historical states upon terminating the flow, forcing users to repeatedly upload JDs.
+- **Solution**: Refactored states via `context.user_data["session"]` dict storage overriding traditional `ConversationHandler` boundaries, allowing the server interface to become globally "sticky" across recurring callback events.
 
-## Installation
+## 9. Future Improvements
+- **Data Persistence**: Implement a PostgreSQL database schema running via SQLAlchemy to track user metrics overtime, manage application sessions, and strictly enforce functional rate-limiting.
+- **Queue Handlers**: Migrate massive asynchronous AI computation blocking to a Background Job Queue (via Celery & Redis) to accommodate concurrent bulk throughput without throttling edge HTTP workers.
 
-```powershell
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-```
-
-## Run the FastAPI Server
-
-```powershell
-uvicorn main:app --reload
-```
-
-API will be available at:
-
-- `http://127.0.0.1:8000`
-- Swagger docs: `http://127.0.0.1:8000/docs`
-
-## Run the Telegram Bot
-
-In a second terminal:
-
-```powershell
-python bot.py
-```
-
-## Run the Discord Bot
-
-In another terminal:
-
-```powershell
-python discord_bot.py
-```
-
-Enable the `Message Content Intent` for your bot in the Discord Developer Portal so the bot can read JD and resume text messages.
-
-## API Endpoints
-
-### `POST /analyze`
-
-Request:
-
-```json
-{
-  "jd": "Backend engineer role requiring Python, FastAPI, Docker, AWS...",
-  "resume_text": "John Doe\nPython Developer..."
-}
-```
-
-Response:
-
-```json
-{
-  "analysis": {
-    "score": 7.5,
-    "match_percentage": 78,
-    "missing_skills": ["AWS", "Docker"],
-    "strengths": ["Strong Python background"],
-    "weaknesses": ["No cloud deployment experience shown"],
-    "suggestions": ["Highlight API performance work"],
-    "missing_keywords": ["microservices", "CI/CD"],
-    "summary": "Solid engineering match with clear cloud gaps."
-  }
-}
-```
-
-### `POST /rewrite`
-
-Request:
-
-```json
-{
-  "jd": "Backend engineer role requiring Python, FastAPI, Docker, AWS...",
-  "resume_text": "John Doe\nPython Developer...",
-  "template": "ATS Resume"
-}
-```
-
-Response:
-
-```json
-{
-  "improved_resume": "PROFESSIONAL SUMMARY\n...",
-  "analysis": {
-    "score": 8.6,
-    "match_percentage": 88,
-    "missing_skills": ["AWS"],
-    "strengths": ["Better keyword coverage"],
-    "weaknesses": ["Cloud experience still limited"],
-    "suggestions": ["Add deployment results if available"],
-    "missing_keywords": ["terraform"],
-    "summary": "Resume is now more targeted and ATS-friendly."
-  }
-}
-```
-
-## Telegram Bot Flow
-
-1. User sends `/start`
-2. Bot asks for the job description
-3. User sends JD text
-4. Bot asks for the resume
-5. User uploads a PDF/TXT resume or pastes text
-6. Bot returns initial analysis
-7. Bot shows inline keyboard template options
-8. User selects a template
-9. Bot rewrites the resume, re-scores it, and sends:
-   - Old Score
-   - New Score
-   - Improvement
-   - Improved resume text
-   - Downloadable styled `.pdf` file
-
-## Discord Bot Flow
-
-1. User sends `!start` or `!analyze`
-2. Bot asks for the job description
-3. User sends JD text
-4. Bot asks for the resume
-5. User uploads a PDF/TXT resume or pastes text
-6. Bot returns initial analysis
-7. Bot shows style buttons
-8. User selects a style
-9. Bot rewrites the resume, re-scores it, and sends:
-   - Old Score
-   - New Score
-   - Improvement
-   - Improved resume text
-   - Downloadable styled `.pdf` file
-
-## Notes
-
-- Telegram session state is stored in memory through `context.user_data`
-- Discord sessions are stored in memory keyed by Discord user id
-- PDF parsing uses `pdfplumber`
-- PDF export uses `reportlab`
-- The bots talk to the FastAPI backend over HTTP using `httpx`
-- For production deployment, move session state to Redis or a database and run the bots/web app behind a process manager
-
-## Example Output Format
-
-Initial Response:
-
-```text
-Score: 6.8/10
-Match: 67%
-Missing Skills: [Docker, AWS]
-Suggestions: [Add cloud tooling, Highlight FastAPI projects]
-```
-
-Final Response:
-
-```text
-Old Score: 6.8/10
-New Score: 8.4/10
-Improvement: +1.6
-```
+## 10. Conclusion
+The AI Resume Analyzer provides a completely automated, programmatic pipeline for deterministic doc-rendering, asynchronous processing, and intelligent entity refactoring. Built to bypass traditional scaling hurdles, it acts as a resilient scaffolding blueprint for local LLM orchestration and real-time generation.
