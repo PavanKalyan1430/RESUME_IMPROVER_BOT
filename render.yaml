@@ -1,19 +1,11 @@
 services:
-  # Single web service running both backend and bot (avoiding paid background workers)
   - type: web
-    name: resume-ai-system
+    name: resume-bot
     env: python
-    plan: free
     buildCommand: "pip install -r requirements.txt"
-    # Runs the web backend in the background and starts the polling bot in the foreground
-    startCommand: "uvicorn main:app --host 0.0.0.0 --port $PORT & sleep 5 && python bot.py"
+    startCommand: "export API_BASE_URL=http://127.0.0.1:$PORT && uvicorn main:app --host 0.0.0.0 --port $PORT & sleep 5 && python bot.py"
     envVars:
       - key: MISTRAL_API_KEY
         sync: false
       - key: TELEGRAM_BOT_TOKEN
         sync: false
-      # Since they share the same Free server container, the bot can talk locally to the backend
-      - key: API_BASE_URL
-        value: "http://127.0.0.1:10000"
-      - key: PORT
-        value: "10000"
