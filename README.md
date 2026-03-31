@@ -1,3 +1,12 @@
+---
+title: Resume Bot
+emoji: 🤖
+colorFrom: indigo
+colorTo: blue
+sdk: docker
+pinned: false
+---
+
 # 📄 AI Resume Enhancer Bot
 
 > **Mathematical JD matching. AI-driven rewriting. Pixel-perfect ATS PDF Generation.**
