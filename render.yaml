@@ -1,0 +1,28 @@
+services:
+  # 1. The FastAPI Backend (Web Service)
+  - type: web
+    name: resume-api-backend
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "uvicorn main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: MISTRAL_API_KEY
+        sync: false
+
+  # 2. The Telegram Bot (Background Worker)
+  - type: worker
+    name: resume-telegram-bot
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python bot.py"
+    envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: MISTRAL_API_KEY
+        sync: false
+      # Automatically pass the Backend's live URL directly to the Bot!
+      - key: API_BASE_URL
+        fromService:
+          type: web
+          name: resume-api-backend
+          envVarKey: RENDER_EXTERNAL_URL
