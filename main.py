@@ -1,15 +1,52 @@
 from __future__ import annotations
 
+import asyncio
+import logging
+import os
+from contextlib import asynccontextmanager
+
+import httpx
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 from ai_service import AIServiceError, get_ai_service
+
+logger = logging.getLogger(__name__)
+
+async def keep_awake_task():
+    """Background task to self-ping the Hugging Face Space to prevent it from sleeping."""
+    space_host = os.getenv("SPACE_HOST")
+    if not space_host:
+        logger.info("SPACE_HOST not found. Self-ping disabled.")
+        return
+    
+    url = f"https://{space_host}/health"
+    logger.info(f"Starting self-ping task for {url}")
+    
+    async with httpx.AsyncClient() as client:
+        while True:
+            await asyncio.sleep(600)  # Wait 10 minutes
+            try:
+                await client.get(url, timeout=10.0)
+                logger.info("Self-ping successful - kept container awake.")
+            except Exception as e:
+                logger.warning(f"Self-ping failed: {e}")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Create the background ping task
+    task = asyncio.create_task(keep_awake_task())
+    yield
+    # Shutdown: Cancel the task gracefully
+    if not task.done():
+        task.cancel()
 
 
 app = FastAPI(
     title="AI Resume Analyzer Bot API",
     version="1.0.0",
     description="Analyze and rewrite resumes against a job description.",
+    lifespan=lifespan,
 )
 
 
