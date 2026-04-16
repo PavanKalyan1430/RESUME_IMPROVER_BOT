@@ -145,7 +145,6 @@ def _build_story(sections: list[tuple[str | None, list[str]]], styles: StyleShee
     for heading, lines in sections:
         if heading:
             story.append(Paragraph(_escape(heading.upper()), styles["section_heading"]))
-            story.append(Spacer(1, 0.02 * inch))
 
         for line in lines:
             if _is_bullet(line):
@@ -155,7 +154,7 @@ def _build_story(sections: list[tuple[str | None, list[str]]], styles: StyleShee
                 if heading and "skills" in heading.lower():
                     style_name = "skills_body"
                 story.append(Paragraph(_escape(line), styles[style_name]))
-        story.append(Spacer(1, 0.05 * inch))
+        story.append(Spacer(1, 0.02 * inch))
 
     return story
 
@@ -200,8 +199,8 @@ def _build_styles(theme: ResumeTheme) -> StyleSheet1:
             alignment=theme.heading_alignment,
             leftIndent=0,
             rightIndent=0,
-            spaceBefore=12,
-            spaceAfter=6,
+            spaceBefore=6,
+            spaceAfter=1,
         )
     )
     styles.add(
@@ -213,7 +212,7 @@ def _build_styles(theme: ResumeTheme) -> StyleSheet1:
             leading=10.5,
             textColor=theme.body_text_color,
             alignment=TA_LEFT,
-            spaceAfter=2,
+            spaceAfter=1,
         )
     )
     styles.add(

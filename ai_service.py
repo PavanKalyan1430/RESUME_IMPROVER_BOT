@@ -168,7 +168,8 @@ Rules:
 - Improve structure, wording, relevance, keyword alignment, and ATS readability.
 - IMPORTANT: Retain ALL experiences, projects, and education. Do NOT trim, cut off, or remove any core content from the original resume. Write concisely instead to save space.
 - Make the output clean, readable, and ready to paste into a resume editor.
-- Include these sections when supported by the source material: Summary, Skills, Experience, Projects, Education.
+- Include these sections when supported by the source material: Skills, Experience, Projects, Education.
+- IMPORTANT: Do NOT include a "Summary" or "Professional Summary" section. Jump straight into the experience or skills.
 - Emphasize JD keywords only when they are legitimately supported by the original resume.
 - Use strong bullet points and concise professional language.
 
