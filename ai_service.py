@@ -72,6 +72,7 @@ class MistralResumeService:
             response = await self.client.chat.complete_async(
                 model=self.model,
                 temperature=0.2,
+                max_tokens=4000,
                 response_format={"type": "json_object"},
                 messages=[
                     {
@@ -92,7 +93,7 @@ class MistralResumeService:
             raise AIServiceError("Mistral returned an empty response.")
 
         try:
-            return json.loads(content)
+            return json.loads(content, strict=False)
         except json.JSONDecodeError as exc:
             raise AIServiceError("Mistral returned invalid JSON.") from exc
 
@@ -102,8 +103,18 @@ class MistralResumeService:
                 return []
             return [str(item).strip() for item in value if str(item).strip()]
 
-        score = round(float(data.get("score", 0)), 1)
-        match_percentage = int(data.get("match_percentage", 0))
+        try:
+            score_val = str(data.get("score", 0)).replace("%", "").split("/")[0].strip()
+            score = round(float(score_val), 1)
+        except (ValueError, TypeError):
+            score = 0.0
+
+        try:
+            match_val = str(data.get("match_percentage", 0)).replace("%", "").strip()
+            match_percentage = int(float(match_val))
+        except (ValueError, TypeError):
+            match_percentage = 0
+            
         return AnalysisResult(
             score=max(0.0, min(score, 10.0)),
             match_percentage=max(0, min(match_percentage, 100)),
