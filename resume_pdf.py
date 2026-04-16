@@ -209,20 +209,8 @@ def _build_styles(theme: ResumeTheme) -> StyleSheet1:
             name="resume_body",
             parent=styles["BodyText"],
             fontName=theme.body_font,
-            fontSize=10.5,
-            leading=14,
-            textColor=theme.body_text_color,
-            alignment=TA_LEFT,
-            spaceAfter=4,
-        )
-    )
-    styles.add(
-        ParagraphStyle(
-            name="skills_body",
-            parent=styles["BodyText"],
-            fontName=theme.body_font,
-            fontSize=10.5,
-            leading=14,
+            fontSize=9.5,
+            leading=10.5,
             textColor=theme.body_text_color,
             alignment=TA_LEFT,
             spaceAfter=2,
@@ -230,16 +218,28 @@ def _build_styles(theme: ResumeTheme) -> StyleSheet1:
     )
     styles.add(
         ParagraphStyle(
+            name="skills_body",
+            parent=styles["BodyText"],
+            fontName=theme.body_font,
+            fontSize=9.5,
+            leading=10.5,
+            textColor=theme.body_text_color,
+            alignment=TA_LEFT,
+            spaceAfter=1,
+        )
+    )
+    styles.add(
+        ParagraphStyle(
             name="resume_bullet",
             parent=styles["BodyText"],
             fontName=theme.body_font,
-            fontSize=10.5,
-            leading=14,
+            fontSize=9.5,
+            leading=10.5,
             textColor=theme.body_text_color,
-            leftIndent=16,
+            leftIndent=14,
             firstLineIndent=0,
             bulletIndent=0,
-            spaceAfter=3,
+            spaceAfter=1,
         )
     )
     return styles

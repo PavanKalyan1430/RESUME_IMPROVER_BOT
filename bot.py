@@ -230,13 +230,15 @@ async def template_selected(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     changes_made = rewrite_response.get("changes_made", [])
     changes_text = "\n\nChanges Made:\n" + "\n".join(f"- {c}" for c in changes_made) if changes_made else ""
 
+    preview_text = session.improved_resume[:3000] + "\n\n... (See full version in the generated PDF)" if len(session.improved_resume) > 3000 else session.improved_resume
+    
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
         text=format_final_response(old_score, new_score, improvement) + changes_text,
     )
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text="Improved Resume:\n\n" + session.improved_resume,
+        text="Improved Resume Preview:\n\n" + preview_text,
     )
 
     pdf_content, pdf_filename = build_resume_pdf(

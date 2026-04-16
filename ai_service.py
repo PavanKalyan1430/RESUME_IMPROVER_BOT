@@ -155,8 +155,7 @@ Return JSON with this exact schema:
 Rules:
 - Keep the candidate truthful. Do not invent jobs, degrees, certifications, metrics, or technical skills.
 - Improve structure, wording, relevance, keyword alignment, and ATS readability.
-- IMPORTANT: Use space cleverly to fill exactly one full page. Do not aggressively cut off the Education or Experience sections. Provide detailed, strong bullet points.
-- Only trim older, irrelevant jobs or minor details if absolutely necessary to prevent the text from spilling onto a second page. Ensure the resume looks complete and well-rounded.
+- IMPORTANT: Retain ALL experiences, projects, and education. Do NOT trim, cut off, or remove any core content from the original resume. Write concisely instead to save space.
 - Make the output clean, readable, and ready to paste into a resume editor.
 - Include these sections when supported by the source material: Summary, Skills, Experience, Projects, Education.
 - Emphasize JD keywords only when they are legitimately supported by the original resume.
