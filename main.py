@@ -32,14 +32,24 @@ async def keep_awake_task():
             except Exception as e:
                 logger.warning(f"Self-ping failed: {e}")
 
+import subprocess
+import sys
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: Create the background ping task
     task = asyncio.create_task(keep_awake_task())
+    
+    # GUARANTEED RUN: Execute the bot script directly as a subprocess 
+    # This bypasses Hugging Face's Docker SDK ignoring rules
+    logger.info("Spawning bot.py background process from main.py...")
+    bot_process = subprocess.Popen([sys.executable, "-u", "bot.py"])
+    
     yield
-    # Shutdown: Cancel the task gracefully
+    # Shutdown: Cancel the task gracefully and terminate bot
     if not task.done():
         task.cancel()
+    bot_process.terminate()
 
 
 app = FastAPI(
