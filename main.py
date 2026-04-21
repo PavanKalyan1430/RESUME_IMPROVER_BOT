@@ -32,24 +32,32 @@ async def keep_awake_task():
             except Exception as e:
                 logger.warning(f"Self-ping failed: {e}")
 
-import subprocess
-import sys
+from bot import build_application
+
+# Native Telegram integration
+telegram_app = build_application()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Create the background ping task
+    # Startup: Keep awake task
     task = asyncio.create_task(keep_awake_task())
     
-    # GUARANTEED RUN: Execute the bot script directly as a subprocess 
-    # This bypasses Hugging Face's Docker SDK ignoring rules
-    logger.info("Spawning bot.py background process from main.py...")
-    bot_process = subprocess.Popen([sys.executable, "-u", "bot.py"])
+    # GUARANTEED NATIVE BOOT: Start Telegram bot inside the FastAPI event loop
+    logger.info("Initializing Telegram Bot natively...")
+    await telegram_app.initialize()
+    await telegram_app.start()
+    await telegram_app.updater.start_polling()
+    logger.info("Telegram Bot is polling successfully!")
     
     yield
-    # Shutdown: Cancel the task gracefully and terminate bot
+    
+    # Shutdown
     if not task.done():
         task.cancel()
-    bot_process.terminate()
+    if telegram_app.updater:
+        await telegram_app.updater.stop()
+    await telegram_app.stop()
+    await telegram_app.shutdown()
 
 
 app = FastAPI(

@@ -4,8 +4,9 @@ import httpx
 import os
 
 
-API_BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
-
+# HF Spaces expose PORT=7860, local testing uses 8000 by default
+PORT = os.getenv("PORT", "7860")
+API_BASE_URL = os.getenv("API_BASE_URL", f"http://127.0.0.1:{PORT}")
 TEMPLATE_DESCRIPTIONS = {
     "ATS Resume": "clean single-column layout for ATS-friendly submissions",
     "Modern Resume": "professional layout with a fresh accent color",
