@@ -27,6 +27,20 @@ def extract_text_from_pdf_bytes(file_bytes: bytes) -> str:
     return text
 
 
+import docx
+
+def extract_text_from_word_file(file_path: str | Path) -> str:
+    """Extract text from a Word document."""
+    try:
+        doc = docx.Document(file_path)
+        text = "\n\n".join(paragraph.text for paragraph in doc.paragraphs if paragraph.text.strip())
+        if not text:
+            raise ResumeParseError("The Word document is empty or unreadable.")
+        return text
+    except Exception as exc:  # pragma: no cover
+        raise ResumeParseError("Unable to read the Word (.docx) file.") from exc
+
+
 def extract_text_from_file(file_path: str | Path) -> str:
     """Extract text from a supported file path."""
     path = Path(file_path)
@@ -36,6 +50,8 @@ def extract_text_from_file(file_path: str | Path) -> str:
     suffix = path.suffix.lower()
     if suffix == ".pdf":
         return extract_text_from_pdf_bytes(path.read_bytes())
+    if suffix == ".docx":
+        return extract_text_from_word_file(path)
 
     if suffix in {".txt", ".md"}:
         text = path.read_text(encoding="utf-8", errors="ignore").strip()
@@ -43,7 +59,7 @@ def extract_text_from_file(file_path: str | Path) -> str:
             raise ResumeParseError("The uploaded text file is empty.")
         return text
 
-    raise ResumeParseError("Unsupported file type. Please upload a PDF or text file.")
+    raise ResumeParseError("Unsupported file type. Please upload a PDF, DOCX, or text file.")
 
 
 def normalize_resume_text(raw_text: str) -> str:

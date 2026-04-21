@@ -290,6 +290,8 @@ def _bullet_html(line: str) -> str:
 
 
 def _escape(value: str) -> str:
+    # Filter out unsupported Emojis or Unicode that would crash ReportLab's Helvetica (WinAnsi)
+    value = value.encode("cp1252", "ignore").decode("cp1252")
     return (
         value.replace("&", "&amp;")
         .replace("<", "&lt;")

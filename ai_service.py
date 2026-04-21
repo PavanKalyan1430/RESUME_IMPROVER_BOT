@@ -92,6 +92,16 @@ class MistralResumeService:
         if not content:
             raise AIServiceError("Mistral returned an empty response.")
 
+        # Clean Markdown JSON fences that Mistral occasionally hallucinates
+        content = content.strip()
+        if content.startswith("```json"):
+            content = content[7:]
+        elif content.startswith("```"):
+            content = content[3:]
+        if content.endswith("```"):
+            content = content[:-3]
+        content = content.strip()
+
         try:
             return json.loads(content, strict=False)
         except json.JSONDecodeError as exc:

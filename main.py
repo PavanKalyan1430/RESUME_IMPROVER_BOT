@@ -16,6 +16,12 @@ logger = logging.getLogger(__name__)
 async def keep_awake_task():
     """Background task to self-ping the Hugging Face Space to prevent it from sleeping."""
     space_host = os.getenv("SPACE_HOST")
+    space_id = os.getenv("SPACE_ID")
+    
+    if not space_host and space_id:
+        space_url_prefix = space_id.replace("/", "-")
+        space_host = f"{space_url_prefix}.hf.space"
+
     if not space_host:
         logger.info("SPACE_HOST not found. Self-ping disabled.")
         return

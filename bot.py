@@ -91,9 +91,9 @@ async def _extract_jd_from_message(update: Update) -> str:
     if message.document:
         document = message.document
         suffix = os.path.splitext(document.file_name or "")[1].lower()
-        if suffix not in {".pdf", ".txt", ".md"}:
+        if suffix not in {".pdf", ".docx", ".txt", ".md"}:
             raise ResumeParseError(
-                "Unsupported file type. Please upload a PDF, TXT, or MD file for the Job Description."
+                "Unsupported file type. Please upload a PDF, Word (.docx), TXT, or MD file for the Job Description."
             )
 
         telegram_file = await document.get_file()
@@ -104,7 +104,7 @@ async def _extract_jd_from_message(update: Update) -> str:
             temp_path = temp_file.name
 
         try:
-            return extract_text_from_file(temp_path)
+            return await asyncio.to_thread(extract_text_from_file, temp_path)
         finally:
             try:
                 os.unlink(temp_path)
@@ -114,7 +114,7 @@ async def _extract_jd_from_message(update: Update) -> str:
     if message.text:
         return message.text.strip()
 
-    raise ResumeParseError("Please upload a PDF/TXT/MD file or paste the job description text.")
+    raise ResumeParseError("Please upload a PDF/DOCX/TXT/MD file or paste the job description text.")
 
 
 async def receive_jd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -241,7 +241,8 @@ async def template_selected(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         text="Improved Resume Preview:\n\n" + preview_text,
     )
 
-    pdf_content, pdf_filename = build_resume_pdf(
+    pdf_content, pdf_filename = await asyncio.to_thread(
+        build_resume_pdf,
         resume_text=session.improved_resume,
         template=template,
         source_filename=session.resume_filename,
@@ -289,8 +290,8 @@ async def _extract_resume_from_message(update: Update) -> tuple[str, str]:
     if message.document:
         document = message.document
         suffix = os.path.splitext(document.file_name or "")[1].lower()
-        if suffix not in {".pdf", ".txt", ".md"}:
-            raise ResumeParseError("Unsupported file type. Please upload a PDF or text file.")
+        if suffix not in {".pdf", ".docx", ".txt", ".md"}:
+            raise ResumeParseError("Unsupported file type. Please upload a PDF, Word (.docx), or text file.")
 
         telegram_file = await document.get_file()
         file_bytes = await telegram_file.download_as_bytearray()
@@ -300,7 +301,8 @@ async def _extract_resume_from_message(update: Update) -> tuple[str, str]:
             temp_path = temp_file.name
 
         try:
-            return extract_text_from_file(temp_path), document.file_name or "resume.txt"
+            parsed_text = await asyncio.to_thread(extract_text_from_file, temp_path)
+            return parsed_text, document.file_name or "resume.txt"
         finally:
             try:
                 os.unlink(temp_path)
@@ -310,7 +312,7 @@ async def _extract_resume_from_message(update: Update) -> tuple[str, str]:
     if message.text:
         return normalize_resume_text(message.text), "resume.txt"
 
-    raise ResumeParseError("Please upload a PDF/TXT resume or paste the resume text.")
+    raise ResumeParseError("Please upload a PDF/DOCX/TXT resume or paste the resume text.")
 
 def build_application() -> Application:
     if not TELEGRAM_BOT_TOKEN:
