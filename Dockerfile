@@ -16,4 +16,4 @@ ENV PORT=7860
 ENV API_BASE_URL=http://127.0.0.1:7860
 
 # Boot up the backend in the background and the bot in the foreground!
-CMD uvicorn main:app --host 0.0.0.0 --port $PORT & sleep 5 && python bot.py
+CMD uvicorn main:app --host 0.0.0.0 --port $PORT & sleep 5 && exec python -u bot.py
