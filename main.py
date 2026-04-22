@@ -41,49 +41,14 @@ async def keep_awake_task():
 from bot import build_application
 from telegram.ext import Application as TelegramApp
 
-# Global reference for shutdown
-telegram_app = None
-
-async def start_telegram_bot():
-    global telegram_app
-    while True:
-        try:
-            logger.info("Attempting to explicitly build and initialize Telegram Bot...")
-            app = build_application()
-            await app.initialize()
-            await app.start()
-            await app.updater.start_polling()
-            telegram_app = app
-            logger.info("Telegram Bot is polling successfully!")
-            break  # Connection successful, exit the retry loop
-        except Exception as exc:
-            logger.warning(f"Failed to start telegram bot ({exc}). Retrying in 10 seconds...")
-            await asyncio.sleep(10)
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: Keep awake task
     task = asyncio.create_task(keep_awake_task())
-    
-    # Start bot completely detached from the critical HTTP web server boot process
-    bot_task = asyncio.create_task(start_telegram_bot())
-    
     yield
-    
     # Shutdown
     if not task.done():
         task.cancel()
-    if not bot_task.done():
-        bot_task.cancel()
-        
-    try:
-        if telegram_app and telegram_app.updater:
-            await telegram_app.updater.stop()
-        if telegram_app:
-            await telegram_app.stop()
-            await telegram_app.shutdown()
-    except Exception as exc:
-        logger.error(f"Error shutting down telegram bot: {exc}")
 
 
 app = FastAPI(
