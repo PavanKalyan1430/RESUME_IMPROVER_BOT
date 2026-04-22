@@ -314,17 +314,20 @@ async def _extract_resume_from_message(update: Update) -> tuple[str, str]:
 
     raise ResumeParseError("Please upload a PDF/DOCX/TXT resume or paste the resume text.")
 
+from telegram.request import HTTPXRequest
+
 def build_application() -> Application:
     if not TELEGRAM_BOT_TOKEN:
         raise RuntimeError("TELEGRAM_BOT_TOKEN is not configured.")
 
+    # Force HTTP/1.1 completely; PythonAnywhere proxy rejects modern HTTP/2 connections.
+    req = HTTPXRequest(http_version="1.1", connect_timeout=30.0, read_timeout=30.0)
+    
     application = (
         Application.builder()
         .token(TELEGRAM_BOT_TOKEN)
-        .connect_timeout(30.0)
-        .read_timeout(30.0)
-        .get_updates_connect_timeout(30.0)
-        .get_updates_read_timeout(30.0)
+        .request(req)
+        .get_updates_request(req)
         .build()
     )
     conversation_handler = ConversationHandler(
