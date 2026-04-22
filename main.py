@@ -45,14 +45,17 @@ from telegram.ext import Application as TelegramApp
 telegram_app = build_application()
 
 async def start_telegram_bot(app: TelegramApp):
-    try:
-        logger.info("Initializing Telegram Bot natively in background...")
-        await app.initialize()
-        await app.start()
-        await app.updater.start_polling()
-        logger.info("Telegram Bot is polling successfully!")
-    except Exception as exc:
-        logger.exception(f"Failed to start telegram bot: {exc}")
+    while True:
+        try:
+            logger.info("Attempting to initialize Telegram Bot natively in background...")
+            await app.initialize()
+            await app.start()
+            await app.updater.start_polling()
+            logger.info("Telegram Bot is polling successfully!")
+            break  # Connection successful, exit the retry loop
+        except Exception as exc:
+            logger.warning(f"Failed to start telegram bot ({exc}). Retrying in 10 seconds...")
+            await asyncio.sleep(10)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
