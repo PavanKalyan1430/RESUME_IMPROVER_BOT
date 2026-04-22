@@ -39,31 +39,44 @@ async def keep_awake_task():
                 logger.warning(f"Self-ping failed: {e}")
 
 from bot import build_application
+from telegram.ext import Application as TelegramApp
 
 # Native Telegram integration
 telegram_app = build_application()
+
+async def start_telegram_bot(app: TelegramApp):
+    try:
+        logger.info("Initializing Telegram Bot natively in background...")
+        await app.initialize()
+        await app.start()
+        await app.updater.start_polling()
+        logger.info("Telegram Bot is polling successfully!")
+    except Exception as exc:
+        logger.exception(f"Failed to start telegram bot: {exc}")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: Keep awake task
     task = asyncio.create_task(keep_awake_task())
     
-    # GUARANTEED NATIVE BOOT: Start Telegram bot inside the FastAPI event loop
-    logger.info("Initializing Telegram Bot natively...")
-    await telegram_app.initialize()
-    await telegram_app.start()
-    await telegram_app.updater.start_polling()
-    logger.info("Telegram Bot is polling successfully!")
+    # Start bot completely detached from the critical HTTP web server boot process
+    bot_task = asyncio.create_task(start_telegram_bot(telegram_app))
     
     yield
     
     # Shutdown
     if not task.done():
         task.cancel()
-    if telegram_app.updater:
-        await telegram_app.updater.stop()
-    await telegram_app.stop()
-    await telegram_app.shutdown()
+    if not bot_task.done():
+        bot_task.cancel()
+        
+    try:
+        if telegram_app.updater:
+            await telegram_app.updater.stop()
+        await telegram_app.stop()
+        await telegram_app.shutdown()
+    except Exception as exc:
+        logger.error(f"Error shutting down telegram bot: {exc}")
 
 
 app = FastAPI(
