@@ -305,18 +305,13 @@ Add your `MISTRAL_API_KEY` and `TELEGRAM_BOT_TOKEN` locally inside a newly creat
 
 ## 11. Running the Application
 
-Because of the cleanly decoupled design, the application explicitly requires concurrent staging execution.
+Thanks to the integrated ASGI lifespan events, both the FastAPI backend and the Telegram Bot are initialized concurrently. You only need to run a single command.
 
-**Terminal 1 — Start the FastAPI Service Engine:**
+**Start the Server and the Bot:**
 ```bash
 .\venv\Scripts\python.exe -m uvicorn main:app --reload
 ```
-*API deployed actively at `http://127.0.0.1:8000`*
-
-**Terminal 2 — Trigger polling Telegram Bot:**
-```bash
-.\venv\Scripts\python.exe bot.py
-```
+*API is actively deployed at `http://127.0.0.1:8000` and the Telegram Bot will begin polling automatically in the background.*
 
 ---
 

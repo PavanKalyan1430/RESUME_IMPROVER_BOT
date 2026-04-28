@@ -5,7 +5,7 @@ import os
 
 
 # HF Spaces expose PORT=7860, local testing uses 8000 by default
-PORT = os.getenv("PORT", "7860")
+PORT = os.getenv("PORT", "8000")
 API_BASE_URL = os.getenv("API_BASE_URL", f"http://127.0.0.1:{PORT}")
 TEMPLATE_DESCRIPTIONS = {
     "ATS Resume": "clean single-column layout for ATS-friendly submissions",
