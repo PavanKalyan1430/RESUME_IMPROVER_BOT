@@ -320,15 +320,10 @@ from telegram.request import HTTPXRequest
 def build_application() -> Application:
     if not TELEGRAM_BOT_TOKEN:
         raise RuntimeError("TELEGRAM_BOT_TOKEN is not configured.")
-
-    # Force HTTP/1.1 completely; PythonAnywhere proxy rejects modern HTTP/2 connections.
-    req = HTTPXRequest(http_version="1.1", connect_timeout=30.0, read_timeout=30.0, pool_timeout=60.0, connection_pool_size=100)
     
     application = (
         Application.builder()
         .token(TELEGRAM_BOT_TOKEN)
-        .request(req)
-        .get_updates_request(req)
         .build()
     )
     conversation_handler = ConversationHandler(
